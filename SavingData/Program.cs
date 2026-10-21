@@ -12,11 +12,13 @@ namespace SavingData
     {
         static async Task Main(string[] args)
         {
-            await InitializeDb();   // Køres kun første gang
+            //await InitializeDb();   // Køres kun første gang
 
             //await AddingData();
             //await UpdatingData();
-            //DeletingData();
+            //await DeletingData();
+
+            //await UpdateDetached();
             //await MultipleOperationsInASingleSaveChanges();
         }
 
@@ -36,7 +38,10 @@ namespace SavingData
             {
                 var blog = await context.Blogs.SingleAsync(b => b.Url == "http://example.com");
                 blog.Url = "http://example.com/blog";
+
                 await context.SaveChangesAsync();
+
+
             }
         }
 
@@ -46,6 +51,7 @@ namespace SavingData
             {
                 var blog = await context.Blogs.SingleAsync(b => b.Url == "http://example.com/blog");
                 context.Blogs.Remove(blog);
+
                 await context.SaveChangesAsync();
             }
         }
@@ -74,6 +80,34 @@ namespace SavingData
                 // remove
                 var lastBlog = await context.Blogs.OrderBy(e => e.BlogId).LastAsync();
                 context.Blogs.Remove(lastBlog);
+
+                await context.SaveChangesAsync();
+            }
+        }
+
+        private static async Task UpdateDetached()
+        {
+
+            Console.WriteLine("############################################################# UpdateDetached");
+
+            Blog blog = null;
+
+            using ( var context = new BloggingContext())
+            {
+                blog = await context.Blogs.AsNoTracking().FirstOrDefaultAsync();
+            }
+
+            blog.Url = "http://Itdata.com/info";
+
+            using (var context = new BloggingContext())
+            {
+                context.Attach(blog);
+
+                var Blogentry = context.Entry(blog);
+
+                Console.WriteLine("The State of the attached blog: " + Blogentry.State); 
+
+                Blogentry.Property(e => e.Url).IsModified = true;
 
                 await context.SaveChangesAsync();
             }
